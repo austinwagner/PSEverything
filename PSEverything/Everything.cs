@@ -18,12 +18,33 @@ namespace PSEverything
         [DllImport("user32.dll", SetLastError = true)]
         private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool ChangeWindowMessageFilterEx(IntPtr hWnd, uint msg, ChangeWindowMessageFilterExAction action, ref ChangeFilterStruct changeInfo);
+
         [StructLayout(LayoutKind.Sequential)]
         private struct CopyData
         { 
             public IntPtr dwData;
             public int cbData;
             public IntPtr lpData;
+        }
+
+        private enum MessageFilterInfo : uint
+        {
+            None = 0, AlreadyAllowed = 1, AlreadyDisAllowed = 2, AllowedHigher = 3
+        };
+
+
+        private enum ChangeWindowMessageFilterExAction : uint
+        {
+            Reset = 0, Allow = 1, DisAllow = 2
+        };
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct ChangeFilterStruct
+        {
+            public uint size;
+            public MessageFilterInfo info;
         }
 
         private const string EverythingIpcClass = "EVERYTHING_TASKBAR_NOTIFICATION";
@@ -101,6 +122,16 @@ namespace PSEverything
             };
 
             CreateHandle(cp);
+            
+            var cs = new ChangeFilterStruct
+            {
+                size = (uint) Marshal.SizeOf(typeof (ChangeFilterStruct))
+            };
+
+            if (!ChangeWindowMessageFilterEx(Handle, WmCopyData, ChangeWindowMessageFilterExAction.Allow, ref cs))
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Error allowing WM_COPYDATA mesasage from lower privilege processes.");
+            }
         }
 
         public IList<FileSystemInfo> Search(string searchString)
