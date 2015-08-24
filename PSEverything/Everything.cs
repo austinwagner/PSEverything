@@ -160,7 +160,11 @@ namespace PSEverything
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Error sending IPC request to Everything Search.");
             }
 
-            _resultsReady.WaitOne();
+            if (!_resultsReady.WaitOne(10000))
+            {
+                throw new TimeoutException("Timed out waiting for response from Everything Search.");
+            }
+
             return _results.ToList();
         }
 
