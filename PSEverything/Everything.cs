@@ -247,11 +247,18 @@ namespace PSEverything
             Size = 22 + searchString.Length * 2;
             _ptr = Marshal.AllocHGlobal(Size);
             var writer = new UnmanagedMemoryWriter(_ptr);
+            // HWND reply_hwnd
             writer.Write((uint)replyHwnd.ToInt64());
-            writer.Write(0);
+            // ULONG_PTR reply_copydata_message (ULONG_PTR is defined as unsigned __int3264, but uint seems 
+            //                                   to work here even when running both processes as 64-bit)
+            writer.Write(0u);
+            // DWORD search_flags
             writer.Write((uint)flags);
-            writer.Write(0);
+            // DWORD offset
+            writer.Write(0u);
+            // DWORD max_results
             writer.Write(uint.MaxValue);
+            // DWORD search_string[1]
             writer.Write(searchString);
         }
 
